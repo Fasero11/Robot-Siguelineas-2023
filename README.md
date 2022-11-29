@@ -7,11 +7,11 @@ Práctica 4 - Sistemas empotrados y de tiempo real. Robot siguelineas.
   **PASOS A SEGUIR:** 
   
   1) Conectarse a la red WIFI "sensoresurjc"
-  2) Conectarse al broker MQTT (en mosquitto) 
+  2) Conectarse al broker MQTT (Mosquitto) 
   3) Leer los mensajes del arduino 
-  4) Publicar en el topic el 3.
+  4) Publicar en el topic mensajes leidos en 3.
 
-  1. y 2. se hacen en el septup y 3. en el loop
+  1. y 2. se hacen en el septup. 3. y 4. en el loop
 
   **MENSAJES QUE MOSTRAR:**
   
