@@ -1,6 +1,18 @@
 # SussusAmogus
 Práctica 4 - Sistemas empotrados y de tiempo real. Robot siguelineas.
 
+## ROBOT: ELEGOO SMART ROBOT CAR KIT V.4.0
+
+
+### INSTRUCCIONES: 
+
+En la carpeta subida, es importante leer el pdf que aparece dentro de **01 ReadMeFirst**, en él aparece las librerías (./ELEGOO Smart/02 Manual/02 Main) a importar para cuando usar el giroscopio, en nuestro caso tenemos: **MPU6050 gyro module**
+
+
+
+
+
+
 ## ESTRUCTURA DE LA PRÁCTICA
 
 ### - ESP32:
