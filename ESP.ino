@@ -1,16 +1,85 @@
 #include <WiFi.h>
 #include <ArduinoMqttClient.h>
 
-char ssid[] = "sensoresurjc";               // your network SSID (name)
-char pass[] = "Goox0sie_WZCGGh25680000";    // your network password (use for WPA, or use as key for WEP)
+char ssid[] = "AstraZeneca_Chip#40876";               // your network SSID (name)
+char pass[] = "4312445a1b1b75a51e3b";    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                // the WiFi radio's status
 
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
+// Define specific pins for Serial2.
+#define RXD2 33
+#define TXD2 4
+
+String sendBuff;
+
 const char broker[] = "192.147.53.2";
 int        port     = 21883;
 const char topic[]  = "SETR/2022/3/";
+
+//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
+//.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
+//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
+
+void send_start_lap() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"START_LAP\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();      
+}
+
+void send_end_lap(long time) {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\""+String(time)+"\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();  
+}
+
+void send_obstacle_detected() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"OBSTACLE_DETECTED\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();    
+}
+
+void send_line_lost() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"LINE_LOST\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();    
+}
+
+void send_ping(long time) {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\""+String(time)+"\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();      
+}
+
+void send_init_line_search() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"INIT_LINE_SEARCH\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();    
+}
+
+void send_stop_line_search() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"STOP_LINE_SEARCH\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();    
+}
+
+void send_line_found() {
+    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"LINE_FOUND\"}";  
+    mqttClient.beginMessage(topic);
+    mqttClient.print(jsonInfo);
+    mqttClient.endMessage();    
+}
+
+//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
+//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
 void initWiFi() {
 
@@ -30,14 +99,16 @@ void initWiFi() {
   printWifiData();
 }
 
-
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//.//.// SETUP //.//.//.//.//.//.//.//.
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
 void setup() {
-  //Initialize serial and wait for port to open:
+  // Regular serial connection to show traces for debug porpuses
   Serial.begin(9600);
+  
+  // Serial port to communicate with Arduino UNO
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
 
   initWiFi();
 
@@ -62,18 +133,28 @@ void setup() {
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
 void loop() {
-  
+
+    // READ MESSAGES FROM ARDUINO UNO //
+    if (Serial2.available()) {
+    
+        char c = Serial2.read();
+        sendBuff += c;
+        
+        if (c == '}')  {            
+        Serial.print("Received data in serial com: ");
+        Serial.println(sendBuff);
+        
+        sendBuff = "";
+        }
+    } 
+   //.//.//.//.//.//.//.//.//.//.
+
     // call poll() regularly to allow the library to send MQTT keep alives which
     // avoids being disconnected by the broker
-    Serial.println("TEST");
     mqttClient.poll();
-
-    String jsonInfo = "{TEST}";
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();
-
-    sleep(1);
+    
+    send_start_lap(); // TEST   
+    sleep(1);         // TEST
  }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
