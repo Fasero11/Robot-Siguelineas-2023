@@ -6,7 +6,17 @@ Práctica 4 - Sistemas empotrados y de tiempo real. Robot siguelineas.
 
 ### INSTRUCCIONES: 
 
-En la carpeta subida, es importante leer el pdf que aparece dentro de **01 ReadMeFirst**, en él aparece las librerías (./ELEGOO Smart/02 Manual/02 Main) a importar para cuando usar el giroscopio, en nuestro caso tenemos: **MPU6050 gyro module**
+1) En la carpeta subida, es importante leer el pdf que aparece dentro de **01 ReadMeFirst**, en él aparece las librerías (./ELEGOO Smart/02 Manual/02 Main) a importar para cuando usar el giroscopio, en nuestro caso tenemos: **MPU6050 gyro module**
+
+2) **02 Manual & Main Code**: en apartado 1 tienes el manual por si quieres revisar algo.
+En el apartado 2 tienes las librerías descrito en 1).
+En el apartado 4 tienes un codigo de conxión del ESP + cámara.
+
+3) **03 Tutorial & Code** tienes muchos ejemplos programados en arduino 
+4) **04 Related chip information** son datasheets
+
+
+
 
 
 
