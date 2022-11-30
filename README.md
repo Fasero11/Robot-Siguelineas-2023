@@ -16,6 +16,7 @@ En el apartado 4 tienes un codigo de conxión del ESP + cámara.
 4) **04 Related chip information** son datasheets
 
 
+### PUERTOS DE CADA SENSOR & MOTOR
 
 
 
