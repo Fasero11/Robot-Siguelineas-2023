@@ -16,7 +16,7 @@ En el apartado 4 tienes un codigo de conxión del ESP + cámara.
 4) **04 Related chip information** son datasheets
 
 
-### CONEXIÓN DE CADA SENSOR & ACTUADOR
+### CONEXIONES SENSORES/ACTUADORES
 
 Tras desgranar del 3) y hacer testing, estos son los valores y conexiones de cada sensor/actuador:
 
@@ -25,10 +25,13 @@ Tras desgranar del 3) y hacer testing, estos son los valores y conexiones de cad
 - **ESP32**
 - **Motores:**
 
-delantero izquierda:
-delantero derecha:
-trasero izquierda:
-trasero derecha:
+ -> delantero izquierda:
+
+ -> delantero derecha:
+
+ -> trasero izquierda:
+
+ -> trasero derecha:
 
 
 
