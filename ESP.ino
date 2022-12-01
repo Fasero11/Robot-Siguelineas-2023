@@ -1,31 +1,39 @@
-#include <WiFi.h>
-#include <ArduinoMqttClient.h>
+#include <Adafruit_MQTT.h>
+#include <Adafruit_MQTT_Client.h>
 
-char ssid[] = "sensoresurjc";               // your network SSID (name)
-char pass[] = "Goox0sie_WZCGGh25680000";    // your network password (use for WPA, or use as key for WEP)
+#include <WiFi.h>
+
+
+#define WLAN_SSID "sensoresurjc"            // your network SSID (name)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"    // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                // the WiFi radio's status
 
-WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
+#define MQTT_SERVER "193.147.53.2"
+#define MQTT_SERVERPORT 21883
+
+WiFiClient client;
+
+// Setup the MQTT client class by passing in the WiFi client and MQTT server.
+Adafruit_MQTT_Client mqtt(&client, MQTT_SERVER, MQTT_SERVERPORT);
+
+// Setup a feed called 'test' for publishing.
+// Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
+Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/");
 
 // Define specific pins for Serial2.
 #define RXD2 33
 #define TXD2 4
 
-#define START_LAP 0
-#define END_LAP 1
-#define OBSTACLE_DETECTED 2
-#define LINE_LOST 3
-#define PING 4
-#define INIT_LINE_SEARCH 5
-#define STOP_LINE_SEARCH 6
-#define LINE_FOUND 7
+#define START_LAP 1
+#define END_LAP 2
+#define OBSTACLE_DETECTED 3
+#define LINE_LOST 4
+#define PING 5
+#define INIT_LINE_SEARCH 6
+#define STOP_LINE_SEARCH 7
+#define LINE_FOUND 8
 
 char *sendBuff;
-
-const char broker[] = "192.147.53.2";
-int        port     = 21883;
-const char topic[]  = "SETR/2022/3/";
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
@@ -67,75 +75,87 @@ void send_json(){
         break;
 
       default:
+        Serial.println("Error: Invalid value.");
         break;
     }
 }
 
 void send_start_lap() {
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"START_LAP\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();      
+  
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"START_LAP\"}";
+    topic.publish(jsoninfo);        
 }
 
 void send_end_lap() {
     long time = millis();
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\"" + String(time) + "\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();  
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\" time_stamp\"}";
+    topic.publish(jsoninfo);  
 }
 
 void send_obstacle_detected() {
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"OBSTACLE_DETECTED\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();    
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"OBSTACLE_DETECTED\"}";
+    topic.publish(jsoninfo);    
 }
 
 void send_line_lost() {
-    String jsonInfo = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"LINE_LOST\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();    
+    char jsoninfo[] = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"LINE_LOST\"}";
+    topic.publish(jsoninfo);    
 }
 
 void send_ping() {
     long time = millis();
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\"" + String(time) + "\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();      
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\" time_stamp\"}";
+    topic.publish(jsoninfo);        
 }
 
 void send_init_line_search() {
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"INIT_LINE_SEARCH\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();    
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"INIT_LINE_SEARCH\"}";
+    topic.publish(jsoninfo);     
 }
 
 void send_stop_line_search() {
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"STOP_LINE_SEARCH\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();    
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"STOP_LINE_SEARCH\"}";
+    topic.publish(jsoninfo);    
 }
 
 void send_line_found() {
-    String jsonInfo = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"LINE_FOUND\"}";  
-    mqttClient.beginMessage(topic);
-    mqttClient.print(jsonInfo);
-    mqttClient.endMessage();    
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"LINE_FOUND\"}";
+    topic.publish(jsoninfo);       
 }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
+
+void MQTT_connect() {
+  int8_t ret;
+
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+
+  Serial.print("Connecting to MQTT... ");
+
+  uint8_t retries = 3;
+  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+       Serial.println(mqtt.connectErrorString(ret));
+       Serial.println("Retrying MQTT connection in 5 seconds...");
+       mqtt.disconnect();
+       delay(5000);  // wait 5 seconds
+       retries--;
+       if (retries == 0) {
+         // basically die and wait for WDT to reset me
+         while (1);
+       }
+  }
+
+  Serial.println("MQTT Connected!");
+}
 
 void initWiFi() {
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
+  WiFi.begin(WLAN_SSID, WLAN_PASS);
   Serial.print("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print('.');
@@ -163,20 +183,6 @@ void setup() {
 
   initWiFi();
 
-  while (true) {
-
-    if (!mqttClient.connect(broker, port)) {
-      Serial.print("MQTT connection failed! Error code = ");
-      Serial.println(mqttClient.connectError());
-
-      delay(1000);
-    }
-    else
-      break;
-  }
-
-  Serial.println("You're connected to the MQTT broker!");
-  Serial.println();
 }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
@@ -185,24 +191,23 @@ void setup() {
 
 void loop() {
 
-    // call poll() regularly to allow the library to send MQTT keep alives which
-    // avoids being disconnected by the broker
-    mqttClient.poll();
+  // Ensure the connection to the MQTT server is alive (this will make the first
+  // connection and automatically reconnect when disconnected).  See the MQTT_connect
+  // function definition further below.
+    MQTT_connect();
 
     // READ MESSAGES FROM ARDUINO UNO //
     if (Serial2.available()) {
     
         char c = Serial2.read();
         sendBuff += c;
-        
-        if (c == '}')  {            
+                  
         Serial.print("Received data in serial com: ");
         Serial.println(sendBuff);
-        
-        sendBuff = "";
-        }
+
     } else {
       send_json();
+      sendBuff = "";
     }
  }
 
