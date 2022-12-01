@@ -4,9 +4,9 @@
 #include <WiFi.h>
 
 
-#define WLAN_SSID "sensoresurjc"            // your network SSID (name)
-#define WLAN_PASS "Goox0sie_WZCGGh25680000"    // your network password (use for WPA, or use as key for WEP)
-int status = WL_IDLE_STATUS;                // the WiFi radio's status
+#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
+int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
 #define MQTT_SERVERPORT 21883
@@ -33,44 +33,52 @@ Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/");
 #define STOP_LINE_SEARCH 7
 #define LINE_FOUND 8
 
-char *sendBuff;
+String sendBuff;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
 void send_json(){
-
-    switch (atoi(sendBuff)){
+    
+    switch (sendBuff.toInt()){
       case START_LAP:
+        Serial.println("Sending START_LAP");
         send_start_lap();
         break;
 
       case END_LAP:
+        Serial.println("Sending END_LAP");
         send_end_lap();
         break;
 
       case OBSTACLE_DETECTED:
+        Serial.println("Sending OBSTACLE_DETECTED");
         send_obstacle_detected();
         break;
 
       case LINE_LOST:
+        Serial.println("Sending LINE_LOST");
         send_line_lost();
         break;
 
       case PING:
+        Serial.println("Sending PING");
         send_ping();
         break;
         
       case INIT_LINE_SEARCH:
+        Serial.println("Sending INIT_LINE_SEARCH");
         send_init_line_search();
         break;
 
       case STOP_LINE_SEARCH:
+        Serial.println("Sending STOP_LINE_SEARCH");
         send_stop_line_search();
         break;
 
       case LINE_FOUND:
+        Serial.println("Sending LINE_FOUND");
         send_line_found();
         break;
 
@@ -195,7 +203,7 @@ void loop() {
   // connection and automatically reconnect when disconnected).  See the MQTT_connect
   // function definition further below.
     MQTT_connect();
-
+    
     // READ MESSAGES FROM ARDUINO UNO //
     if (Serial2.available()) {
     
@@ -205,9 +213,9 @@ void loop() {
         Serial.print("Received data in serial com: ");
         Serial.println(sendBuff);
 
-    } else {
-      send_json();
-      sendBuff = "";
+        send_json();
+
+        sendBuff = "";
     }
  }
 
