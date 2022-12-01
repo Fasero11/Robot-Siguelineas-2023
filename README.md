@@ -73,7 +73,7 @@ IMPORTANTE! Cada vez que se mande una velocidad el motor hay que mandar high
   3) Leer los mensajes del arduino 
   4) Publicar en el topic mensajes leidos en 3.
 
-  1. y 2. se hacen en el septup. 3. y 4. en el loop
+  1. y 2. se hacen en el set-up. 3. y 4. en el loop
 
   **MENSAJES QUE MOSTRAR:**
   
