@@ -21,18 +21,42 @@ En el apartado 4 tienes un codigo de conxión del ESP + cámara.
 Tras desgranar del 3) y hacer testing, estos son los valores y conexiones de cada sensor/actuador:
 
 - **Sensor ultrasonico**
+```
+// ultrasonic sensor 
+#define TRIG_PIN 13  
+#define ECHO_PIN 12 
+```
+
 - **Módulo seguimiento de línea**
-- **ESP32**
+
+```
+// infrared sensor ( de 0 a 1024 ) analog write
+#define PIN_ITR20001-LEFT   A2
+#define PIN_ITR20001-MIDDLE A1
+#define PIN_ITR20001-RIGHT  A0
+```
+
 - **Motores:**
+```
+// Enable/Disable motor control.
+//  HIGH: motor control enabled
+//  LOW: motor control disabled
+#define PIN_Motor_STBY 3
 
- -> delantero izquierda:
+// Group A Motors (Right Side)
+// PIN_Motor_AIN_1: Digital output. HIGH: Forward, LOW: Backward
+#define PIN_Motor_AIN_1 7
+// PIN_Motor_PWMA: Analog output [0-255]. It provides speed.
+#define PIN_Motor_PWMA 5
 
- -> delantero derecha:
+// Group B Motors (Left Side)
+// PIN_Motor_BIN_1: Digital output. HIGH: Forward, LOW: Backward
+#define PIN_Motor_BIN_1 8
+// PIN_Motor_PWMB: Analog output [0-255]. It provides speed.
+#define PIN_Motor_PWMB 6
+```
 
- -> trasero izquierda:
-
- -> trasero derecha:
-
+IMPORTANTE! Cada vez que se mande una velocidad el motor hay que mandar high
 
 
 
