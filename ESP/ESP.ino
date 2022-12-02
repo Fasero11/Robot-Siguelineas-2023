@@ -4,8 +4,8 @@
 #include <WiFi.h>
 
 
-#define WLAN_SSID "AstraZeneca_Chip#40876"                // your network SSID (name)
-#define WLAN_PASS "4312445a1b1b75a51e3b"     // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
