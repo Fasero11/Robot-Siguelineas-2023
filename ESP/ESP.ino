@@ -4,8 +4,8 @@
 #include <WiFi.h>
 
 
-#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
-#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "AstraZeneca_Chip#40876"                // your network SSID (name)
+#define WLAN_PASS "4312445a1b1b75a51e3b"     // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
@@ -95,8 +95,9 @@ void send_start_lap() {
 }
 
 void send_end_lap() {
-    long time = millis();
-    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\" time_stamp\"}";
+    long time_ms = millis();
+    char jsoninfo[100];
+    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\" %ld\"}", time_ms);
     topic.publish(jsoninfo);  
 }
 
@@ -111,8 +112,9 @@ void send_line_lost() {
 }
 
 void send_ping() {
-    long time = millis();
-    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\" time_stamp\"}";
+    long time_ms = millis();
+    char jsoninfo[100];
+    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\" %ld\"}", time_ms);
     topic.publish(jsoninfo);        
 }
 
@@ -190,7 +192,6 @@ void setup() {
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
 
   initWiFi();
-
 }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
@@ -198,7 +199,6 @@ void setup() {
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
 void loop() {
-
   // Ensure the connection to the MQTT server is alive (this will make the first
   // connection and automatically reconnect when disconnected).  See the MQTT_connect
   // function definition further below.
@@ -209,9 +209,11 @@ void loop() {
     
         char c = Serial2.read();
         sendBuff += c;
-                  
+
         Serial.print("Received data in serial com: ");
-        Serial.println(sendBuff);
+        Serial.print(sendBuff);
+        //Serial.print(" SIZE: ");
+        //Serial.println(sizeof(sendBuff));
 
         send_json();
 
