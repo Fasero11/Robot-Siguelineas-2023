@@ -2,14 +2,16 @@
 #include <Thread.h>
 #include <ThreadController.h>
 
+#define IR_THRESHOLD 100
+
 // ultrasonic sensor 
 #define TRIG_PIN 13  
 #define ECHO_PIN 12 
 
 // infrared sensor ( de 0 a 1024 ) analog write
-#define PIN_ITR20001-LEFT   A2
-#define PIN_ITR20001-MIDDLE A1
-#define PIN_ITR20001-RIGHT  A0
+#define PIN_ITR20001_LEFT   A2
+#define PIN_ITR20001_MIDDLE A1
+#define PIN_ITR20001_RIGHT  A0
 
 // Enable/Disable motor control.
 //  HIGH: motor control enabled
@@ -28,10 +30,9 @@
 // PIN_Motor_PWMB: Analog output [0-255]. It provides speed.
 #define PIN_Motor_PWMB 6
 
-
 //ultrasonic sensor 
 #define MAX_DIST_OBSTACLE 8
-#define MIN_DIST_OBSTACLE 0
+//#define MIN_DIST_OBSTACLE 0
 
 // in milliseconds
 #define THREE_HUNDRED_MS 300
@@ -40,11 +41,30 @@
 //in microseconds
 #define TEN_MS 10
 
+#define START_LAP 1
+#define END_LAP 2
+#define OBSTACLE_DETECTED 3
+#define LINE_LOST 4
+#define PING 5
+#define INIT_LINE_SEARCH 6
+#define STOP_LINE_SEARCH 7
+#define LINE_FOUND 8
+
+int prev_time = 0;
 bool detected_obstacle = false;
+int left_ir;
+int middle_ir;
+int right_ir;
+int message;
 
 ThreadController controller = ThreadController();
 Thread distanceThread = Thread();
+Thread IRThread = Thread();
+Thread msgThread = Thread();
 
+void send_message(){
+    Serial.print(message);    
+}
 
 //return distance in cm
 int get_distance(){
@@ -58,21 +78,30 @@ int get_distance(){
   
   // conversion into cm 
   distance = time / 29 / 2; 
-  //Serial.println(distance);
+  // Serial.println(distance);
 
   return distance;
 }
 
+void get_infrared(){
+  left_ir = analogRead(PIN_ITR20001_LEFT);
+  middle_ir = analogRead(PIN_ITR20001_MIDDLE);
+  right_ir = analogRead(PIN_ITR20001_RIGHT);
+    
+//  Serial.print("LEFT: ");
+//  Serial.print(left_ir);
+//  Serial.print(" MIDDLE: ");
+//  Serial.print(middle_ir);
+//  Serial.print(" RIGHT: ");
+//  Serial.println(right_ir);    
+}
 
 void callback_dist_thread(){
 
-  int distance_sensor = 0;
-
-  distance_sensor = get_distance();
+  int distance_sensor = get_distance();
 
   //Serial.println(distance_sensor);
-  if (MIN_DIST_OBSTACLE < distance_sensor && distance_sensor < MAX_DIST_OBSTACLE){
-
+  if (distance_sensor < MAX_DIST_OBSTACLE){
     detected_obstacle = true;
   }
 }
@@ -85,22 +114,38 @@ void setup() {
 
   //THREAD SETUP
   distanceThread.enabled = true;
-  distanceThread.setInterval(THREE_HUNDRED_MS);
+  distanceThread.setInterval(300); // ms
   distanceThread.onRun(callback_dist_thread);
+
+  IRThread.enabled = true;
+  IRThread.setInterval(100); // ms
+  IRThread.onRun(get_infrared);
+
+  msgThread.enabled = true;
+  msgThread.setInterval(1000); // ms
+  msgThread.onRun(send_message);
+
+  controller.add(&distanceThread);
+  controller.add(&IRThread);
+  controller.add(&msgThread); 
 
   Serial.begin(9600);
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  controller.add(&distanceThread);
-
-  // service state phase b)
+    
+  if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+    message = LINE_LOST;
+  } else {
+    message = 0;
+  }
+    
   if(detected_obstacle){
-
-    //we do not need this thread any more
     controller.remove(&distanceThread);
+    // Send message once every second.
+    message = OBSTACLE_DETECTED;
+    controller.add(&msgThread); 
   }
 
   controller.run();  
