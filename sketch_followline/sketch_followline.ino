@@ -45,17 +45,20 @@
 #define STOP_LINE_SEARCH 7
 #define LINE_FOUND 8
 
-int prev_time = 0;
+#define NO_LINE 0
+#define LINE_LEFT 1
+#define LINE_MIDLEFT 2
+#define LINE_MID 3
+#define LINE_MIDRIGHT 4
+#define LINE_RIGHT 5
+
 bool detected_obstacle = false;
-int left_ir;
-int middle_ir;
-int right_ir;
-int message;
 bool is_line = true;
-int line;
 bool ping = false;
-int count = 0;
 long aux_time = 0;
+
+int left_ir, middle_ir, right_ir, message, prev_time, line, count;
+
 //int smooth_right;
 //int smooth_left;
 
@@ -76,9 +79,8 @@ void send_message(){
         message = PING;
       }
 
-      
       //Serial.print(message);
-      
+
       xTaskDelayUntil(&xLastWaskeTime, 20);
     }    
 }
@@ -103,36 +105,44 @@ void get_infrared(){
       // TODOS ESTÁN FUERA 
       if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
         is_line = false;
-        line = 5;
+        line = NO_LINE;
 
       }
       // AÑADIR EL CASO DE QUE SOLO TOQUE AL DEL CENTRO Y SERÁ LINE == 0 
 
-      if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+      // CENTRO DERECHA
+      else if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("muy der");
-        line = 4;
+        line = LINE_MIDRIGHT;
       }
-      if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+      // DERECHA
+      else if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("der");
-        line = 3;
+        line = LINE_RIGHT;
       }
-      if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
-        //Serial.println("izq");
-        line = 1;
-      }
-      if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
+      // CENTRO IZQUIERDA
+      else if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
         //Serial.println("muy izq");
-        line = 2;
+        line = LINE_MIDLEFT;
       }
-      
-        
+      // IZQUIERDA
+      else if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+        //Serial.println("izq");
+        line = LINE_LEFT;
+      }
+      // CENTRO
+      else {
+        line = LINE_MID;
+      }
+
+
 //      Serial.print("LEFT: ");
 //      Serial.print(left_ir);
 //      Serial.print(" MIDDLE: ");
 //      Serial.print(middle_ir);
 //      Serial.print(" RIGHT: ");
 //      Serial.println(right_ir);
-      
+
       xTaskDelayUntil(&xLastWaskeTime, 10);
   }    
 }
@@ -146,7 +156,7 @@ int get_distance(){
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
   time=pulseIn(ECHO_PIN, HIGH);
-  
+
   // conversion into cm 
   distance = time / 29 / 2; 
   //Serial.println(distance);
@@ -160,7 +170,7 @@ void is_obstacle(){
     //Serial.println("CHECKING ULTRASOUND");
     xLastWaskeTime = xTaskGetTickCount();
     int distance_sensor = get_distance();
-    
+
     //Serial.println(distance_sensor);
     if (distance_sensor < MAX_DIST_OBSTACLE){
       detected_obstacle = true;
@@ -180,34 +190,34 @@ void command_motors(){
       digitalWrite(PIN_Motor_AIN_1, HIGH);
       digitalWrite(PIN_Motor_BIN_1, HIGH);
 
-      if (line == 0 && !detected_obstacle){
+      if (line == LINE_MID && !detected_obstacle){
         // right 
         analogWrite(PIN_Motor_PWMA, 40);
         // left
         analogWrite(PIN_Motor_PWMB, 40); 
 
       }
-      if (line == 5 || detected_obstacle){
+      if (line == NO_LINE || detected_obstacle){
 
         analogWrite(PIN_Motor_PWMA, 0);
         analogWrite(PIN_Motor_PWMB, 0);     
       }
 
-      if (line == 3 && !detected_obstacle){
+      if (line == LINE_RIGHT && !detected_obstacle){
         // right 
         analogWrite(PIN_Motor_PWMA, 40);
         // left
         analogWrite(PIN_Motor_PWMB, 20); 
 
       }
-      if (line == 4 && !detected_obstacle){
+      if (line == LINE_MIDRIGHT && !detected_obstacle){
         // right 
         analogWrite(PIN_Motor_PWMA, 30);
         // left
         analogWrite(PIN_Motor_PWMB, 0);
 
       }
-      if (line == 1 && !detected_obstacle){
+      if (line == LINE_LEFT && !detected_obstacle){
         // right 
         analogWrite(PIN_Motor_PWMA, 20);
         // left
@@ -215,7 +225,7 @@ void command_motors(){
 
       }
       //Serial.println(smooth_left);
-      if (line == 2 && !detected_obstacle){
+      if (line == LINE_MIDLEFT && !detected_obstacle){
 
         // right 
         analogWrite(PIN_Motor_PWMA, 0);
@@ -229,16 +239,13 @@ void command_motors(){
 }
 
 /*void send_ping(){
-
   TickType_t xLastWaskeTime, aux;
    while(1){
       xLastWaskeTime = xTaskGetTickCount();
       if (millis() - aux_time > 1000){
-
         aux_time = millis();
         count++;
         ping = false;
-
       }
         
       if (count == 4){
@@ -250,6 +257,7 @@ void command_motors(){
       xTaskDelayUntil(&xLastWaskeTime, 10);
     }
 }*/
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -258,7 +266,7 @@ void setup() {
   pinMode(PIN_Motor_PWMA, OUTPUT);
   pinMode(PIN_Motor_BIN_1, OUTPUT);
   pinMode(PIN_Motor_PWMB, OUTPUT);
-            
+
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
@@ -266,15 +274,15 @@ void setup() {
 
   // communicate arduino with ESP to start lap
 
-  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 3, NULL);
-  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
-  xTaskCreate(send_message, "send_message", 500, NULL, 0, NULL);
-  xTaskCreate(command_motors, "command_motors", 50, NULL, 4, NULL);
+  xTaskCreate(is_obstacle, "is_obstacle", 512, NULL, 3, NULL);
+  xTaskCreate(get_infrared, "get_infrared", 512, NULL, 1, NULL);
+  xTaskCreate(send_message, "send_message", 512, NULL, 0, NULL);
+  xTaskCreate(command_motors, "command_motors", 512, NULL, 4, NULL);
 
   // state message sent each 4 seconds, time field should represent time
   // since lap started . Should prioritize follow line behaviour to 
   // sending PING messages 
-  //xTaskCreate(send_ping, "send_ping", 100, NULL, 2, NULL);
+  //xTaskCreate(send_ping, "send_ping", 512, NULL, 2, NULL);
 
   Serial.begin(9600);
 
