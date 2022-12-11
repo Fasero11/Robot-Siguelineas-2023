@@ -2,14 +2,17 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include <WiFi.h>
-
-
-#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
-#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "MOVISTAR_8506"                // your network SSID (name)
+#define WLAN_PASS "vQ62yjR2Y7F4GmKS2dE8"     // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
 #define MQTT_SERVERPORT 21883
+#define MQTT_QOS_2 2
+
+// mandar c para simular que está conectado
+//const byte data[] = {'C'};
+//const size_t dataLength = sizeof(data);
 
 WiFiClient client;
 
@@ -18,7 +21,8 @@ Adafruit_MQTT_Client mqtt(&client, MQTT_SERVER, MQTT_SERVERPORT);
 
 // Setup a feed called 'test' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
-Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/");
+// last field is Qos = 2 
+Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/", MQTT_QOS_2);
 
 // Define specific pins for Serial2.
 #define RXD2 33
@@ -141,7 +145,10 @@ void MQTT_connect() {
 
   // Stop if already connected.
   if (mqtt.connected()) {
+    // WIP  mandar conexión al arduino 
+    //Serial.write(data, dataLength);
     return;
+    // cuando lo haga mandar el mensaje de start lap
   }
 
   Serial.print("Connecting to MQTT... ");
