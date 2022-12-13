@@ -2,8 +2,8 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include <WiFi.h>
-#define WLAN_SSID "MOVISTAR_8506"                // your network SSID (name)
-#define WLAN_PASS "vQ62yjR2Y7F4GmKS2dE8"     // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
@@ -38,6 +38,7 @@ Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/", MQTT
 #define LINE_FOUND 8
 
 String sendBuff;
+int start_lap_times = 0;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
@@ -93,7 +94,6 @@ void send_json(){
 }
 
 void send_start_lap() {
-  
     char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"START_LAP\"}";
     topic.publish(jsoninfo);        
 }
@@ -199,6 +199,7 @@ void setup() {
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
 
   initWiFi();
+
 }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
@@ -209,7 +210,15 @@ void loop() {
   // Ensure the connection to the MQTT server is alive (this will make the first
   // connection and automatically reconnect when disconnected).  See the MQTT_connect
   // function definition further below.
+    
+    
     MQTT_connect();
+    
+    if (start_lap_times == 0 && mqtt.connected()){
+      send_start_lap();
+      start_lap_times += 1;
+    }
+    
     
     // READ MESSAGES FROM ARDUINO UNO //
     if (Serial2.available()) {
