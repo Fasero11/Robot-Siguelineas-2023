@@ -87,7 +87,7 @@ void send_message(){
         message = PING;
       }
 
-      //Serial.print(message);
+      Serial.print(message);
       
       xTaskDelayUntil(&xLastWaskeTime, 20);
     }    
@@ -227,12 +227,12 @@ void command_motors(){
         right_vel = 0;
       }
 
-      Serial.print("Error: ");
-      Serial.print(error);
-      Serial.print(" | Left: ");
-      Serial.print(left_vel);
-      Serial.print(" | Right: ");
-      Serial.println(right_vel);
+      //Serial.print("Error: ");
+      //Serial.print(error);
+      //Serial.print(" | Left: ");
+      //Serial.print(left_vel);
+      //Serial.print(" | Right: ");
+     // Serial.println(right_vel);
 
       // right 
       analogWrite(PIN_Motor_PWMA, right_vel);
@@ -244,16 +244,13 @@ void command_motors(){
 }
 
 /*void send_ping(){
-
   TickType_t xLastWaskeTime, aux;
    while(1){
       xLastWaskeTime = xTaskGetTickCount();
       if (millis() - aux_time > 1000){
-
         aux_time = millis();
         count++;
         ping = false;
-
       }
         
       if (count == 4){
@@ -300,3 +297,4 @@ void setup() {
 
 void loop() {
 }
+
