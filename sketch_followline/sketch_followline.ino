@@ -1,7 +1,8 @@
-#include <StaticThreadController.h>
-#include <Thread.h>
-#include <ThreadController.h>
 #include <Arduino_FreeRTOS.h>
+
+#define STD_VELOCITY 50
+#define MAX_VELOCITY 255
+#define MIN_VELOCITY 0
 
 //#define MAX_IR_THRESHOLD 550
 //#define MIN_IR_THRESHOLD 500
@@ -57,7 +58,17 @@ bool is_line = true;
 bool ping = false;
 long aux_time = 0;
 
-int left_ir, middle_ir, right_ir, message, prev_time, line, count;
+int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel;
+
+//.//.//.//.//.//. PID //.//.//.//.//.//.
+
+const float Kp = 1;
+const float Kd = 0;
+
+float P = 0, D = 0, PD = 0;
+float error = 0, previous_error = 0;
+
+//.//.//.//.//.//.//.//.//.//.//.//.//.//
 
 void send_message(){
   TickType_t xLastWaskeTime, aux;
@@ -76,8 +87,8 @@ void send_message(){
         message = PING;
       }
 
-      Serial.print(message);
-
+      //Serial.print(message);
+      
       xTaskDelayUntil(&xLastWaskeTime, 20);
     }    
 }
@@ -85,43 +96,65 @@ void send_message(){
 void get_infrared(){
   TickType_t xLastWaskeTime, aux;
   while(1){
-    xLastWaskeTime = xTaskGetTickCount();
-    left_ir = analogRead(PIN_ITR20001_LEFT);
-    middle_ir = analogRead(PIN_ITR20001_MIDDLE);
-    right_ir = analogRead(PIN_ITR20001_RIGHT);
+      xLastWaskeTime = xTaskGetTickCount();
+      left_ir = analogRead(PIN_ITR20001_LEFT);
+      middle_ir = analogRead(PIN_ITR20001_MIDDLE);
+      right_ir = analogRead(PIN_ITR20001_RIGHT);
+      /*
+      Serial.print("left_ir: ");
+      Serial.print(left_ir);
+      Serial.print(" | middle_ir: ");
+      Serial.print(middle_ir);
+      Serial.print(" | right_ir: ");
+      Serial.println(right_ir);*/
 
+      // TODOS ESTÁN FUERA 
+      if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+        is_line = false;
+        line = NO_LINE;
 
-    // TODOS ESTÁN FUERA 
-    if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
-      is_line = false;
-      line = NO_LINE;
-    }
-    if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
-      // RIGHT
-      line = LINE_RIGHT;
+      }
+      // AÑADIR EL CASO DE QUE SOLO TOQUE AL DEL CENTRO Y SERÁ LINE == 0 
 
-    }
-    if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
-      // CENTER AND RIGHT
-      line = LINE_MIDRIGHT;
-
-    }
-    if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
-      // LEFT
-      line = LINE_LEFT;
-
-    }
-    if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
-      // CENTER AND LEFT
-      line = LINE_MIDLEFT;
-
-    } 
-    if(left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
-      // JUST THE MIDDLE TOUCH THE LINE
-      line = LINE_MID;
-    }
-    
-    xTaskDelayUntil(&xLastWaskeTime, 10);
+      // CENTRO DERECHA
+      else if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+        //Serial.println("muy der");
+        error += 2;
+        line = LINE_MIDRIGHT;
+      }
+      // DERECHA
+      else if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+        //Serial.println("der");
+        error += 1;
+        line = LINE_RIGHT;
+      }
+      // CENTRO IZQUIERDA
+      else if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
+        //Serial.println("muy izq");
+        error -= 1;
+        line = LINE_MIDLEFT;
+      }
+      // IZQUIERDA
+      else if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+        //Serial.println("izq");
+        error -= 2;
+        line = LINE_LEFT;
+      }
+      // CENTRO
+      else {
+        error = 0;
+        line = LINE_MID;
+      }
+      
+        
+//      Serial.print("LEFT: ");
+//      Serial.print(left_ir);
+//      Serial.print(" MIDDLE: ");
+//      Serial.print(middle_ir);
+//      Serial.print(" RIGHT: ");
+//      Serial.println(right_ir);
+      
+      xTaskDelayUntil(&xLastWaskeTime, 10);
   }    
 }
 
@@ -134,7 +167,7 @@ int get_distance(){
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
   time=pulseIn(ECHO_PIN, HIGH);
-
+  
   // conversion into cm 
   distance = time / 29 / 2; 
   //Serial.println(distance);
@@ -145,13 +178,13 @@ int get_distance(){
 void is_obstacle(){
   TickType_t xLastWaskeTime, aux;
   while(1){
-
+    //Serial.println("CHECKING ULTRASOUND");
     xLastWaskeTime = xTaskGetTickCount();
     int distance_sensor = get_distance();
-
+    
+    //Serial.println(distance_sensor);
     if (distance_sensor < MAX_DIST_OBSTACLE){
       detected_obstacle = true;
-      //Serial.println("obstacle");
     } else {
       detected_obstacle = false;  
     }
@@ -162,66 +195,65 @@ void is_obstacle(){
 void command_motors(){
   TickType_t xLastWaskeTime, aux;
   while(1){
-
+      //Serial.println("COMMANDING MOTORS");
       xLastWaskeTime = xTaskGetTickCount();
       // set high each time we use them 
       digitalWrite(PIN_Motor_AIN_1, HIGH);
       digitalWrite(PIN_Motor_BIN_1, HIGH);
+      
+      P = error;
+      D = error - previous_error;      
 
-      if (line == LINE_MID && !detected_obstacle){
-        // right 
-        analogWrite(PIN_Motor_PWMA, 50);
-        // left
-        analogWrite(PIN_Motor_PWMB, 50); 
+      PD = (Kp * P) + (Kd * D);
 
+      right_vel = STD_VELOCITY - PD;
+      left_vel = STD_VELOCITY + PD;
+
+      if (right_vel > MAX_VELOCITY){
+        right_vel = MAX_VELOCITY;
       }
-      if (line == NO_LINE || detected_obstacle){
-
-        analogWrite(PIN_Motor_PWMA, 0);
-        analogWrite(PIN_Motor_PWMB, 0);     
+      if (right_vel < MIN_VELOCITY){
+        right_vel = MIN_VELOCITY;
+      }
+      if (left_vel > MAX_VELOCITY){
+        left_vel = MAX_VELOCITY;
+      }
+      if (left_vel < MIN_VELOCITY){
+        left_vel = MIN_VELOCITY;
+      }
+    
+      if (line == NO_LINE){
+        left_vel = 0;
+        right_vel = 0;
       }
 
-      if (line == LINE_MIDRIGHT && !detected_obstacle){ // gira izq + mid 
-        // right 
-        analogWrite(PIN_Motor_PWMA, 20);
-        // left
-        analogWrite(PIN_Motor_PWMB, 40); 
+      Serial.print("Error: ");
+      Serial.print(error);
+      Serial.print(" | Left: ");
+      Serial.print(left_vel);
+      Serial.print(" | Right: ");
+      Serial.println(right_vel);
 
-      }
-      if (line == LINE_RIGHT && !detected_obstacle){ // gira izq
-        // right 
-        analogWrite(PIN_Motor_PWMA, 0);
-        // left
-        analogWrite(PIN_Motor_PWMB, 40);
+      // right 
+      analogWrite(PIN_Motor_PWMA, right_vel);
+      // left
+      analogWrite(PIN_Motor_PWMB, left_vel); 
 
-      }
-      if (line == LINE_MIDLEFT && !detected_obstacle){ //  gira derecha + mid
-        // right 
-        analogWrite(PIN_Motor_PWMA, 40);
-        // left
-        analogWrite(PIN_Motor_PWMB, 20);
-
-      }
-      if (line == LINE_LEFT && !detected_obstacle){ // gira derecha
-
-        // right 
-        analogWrite(PIN_Motor_PWMA, 40);
-        // left
-        analogWrite(PIN_Motor_PWMB, 0);
-
-      }
       xTaskDelayUntil(&xLastWaskeTime, 10);
   }   
 }
 
 /*void send_ping(){
+
   TickType_t xLastWaskeTime, aux;
    while(1){
       xLastWaskeTime = xTaskGetTickCount();
       if (millis() - aux_time > 1000){
+
         aux_time = millis();
         count++;
         ping = false;
+
       }
         
       if (count == 4){
@@ -237,12 +269,14 @@ void command_motors(){
 void setup() {
   // put your setup code here, to run once:
 
+  Serial.println("START");
+
   pinMode(PIN_Motor_STBY, OUTPUT);
   pinMode(PIN_Motor_AIN_1, OUTPUT);
   pinMode(PIN_Motor_PWMA, OUTPUT);
   pinMode(PIN_Motor_BIN_1, OUTPUT);
   pinMode(PIN_Motor_PWMB, OUTPUT);
-
+            
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
@@ -261,19 +295,8 @@ void setup() {
   //xTaskCreate(send_ping, "send_ping", 512, NULL, 2, NULL);
 
   Serial.begin(9600);
-  //Serial.setTimeout(50);
 
 }
 
 void loop() {
-
-  // intento de comunicación del esp al arduino 
-  /*if (Serial.available())
-  {
-      char data = Serial.read();
-      if (data == 'C'){
-        
-        Serial.println(data);
-      }
-  }*/
 }
