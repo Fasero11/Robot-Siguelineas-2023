@@ -1,12 +1,13 @@
 #include <Arduino_FreeRTOS.h>
 
-#define STD_VELOCITY 50
+#define RXD2 33
+#define TXD2 4
+
+#define STD_VELOCITY 0
 #define MAX_VELOCITY 255
 #define MIN_VELOCITY 0
 
-//#define MAX_IR_THRESHOLD 550
-//#define MIN_IR_THRESHOLD 500
-#define IR_THRESHOLD 100 // mi suelo da valores de unos 50 y la cinta de unos 500
+#define IR_THRESHOLD 100
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
@@ -35,7 +36,7 @@
 #define PIN_Motor_PWMB 6
 
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 8
+#define MAX_DIST_OBSTACLE 7.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -58,49 +59,57 @@ bool is_line = true;
 bool ping = false;
 long aux_time = 0;
 
-int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel;
+int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel, line_lost_sent, obstacle_detected_sent;
 
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
-const float Kp = 1;
+const float Kp = 0;
 const float Kd = 0;
 
-float P = 0, D = 0, PD = 0;
+float p_error = 0, d_error = 0, PD = 0;
 float error = 0, previous_error = 0;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//
 
+long current_ping_time, prev_ping_time;
+
 void send_message(){
-  TickType_t xLastWaskeTime, aux;
+  TickType_t xLastWaskeTime;
 
   while(1){
       xLastWaskeTime = xTaskGetTickCount();
 
       message = 0;
-      if (!is_line){
-        message = LINE_LOST;
-      }
-      if(detected_obstacle){
-        message = OBSTACLE_DETECTED;
-      }
-      if(ping){
-        message = PING;
+      if (!is_line && !line_lost_sent){
+        Serial.print(LINE_LOST);
+        Serial.print(INIT_LINE_SEARCH);
+        line_lost_sent = 1;
       }
 
-      Serial.print(message);
+      if (line_lost_sent && is_line){
+        line_lost_sent = 0;
+        Serial.print(LINE_FOUND);
+        Serial.print(STOP_LINE_SEARCH);
+      }
+      
+      if(detected_obstacle && !obstacle_detected_sent){    
+        Serial.print(OBSTACLE_DETECTED);
+        Serial.print(END_LAP);
+        obstacle_detected_sent = 1;
+      }
       
       xTaskDelayUntil(&xLastWaskeTime, 20);
     }    
 }
 
 void get_infrared(){
-  TickType_t xLastWaskeTime, aux;
+  TickType_t xLastWaskeTime;
   while(1){
       xLastWaskeTime = xTaskGetTickCount();
       left_ir = analogRead(PIN_ITR20001_LEFT);
       middle_ir = analogRead(PIN_ITR20001_MIDDLE);
       right_ir = analogRead(PIN_ITR20001_RIGHT);
-      /*
+    /*
       Serial.print("left_ir: ");
       Serial.print(left_ir);
       Serial.print(" | middle_ir: ");
@@ -119,25 +128,25 @@ void get_infrared(){
       // CENTRO DERECHA
       else if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("muy der");
-        error += 2;
+        error += 1;
         line = LINE_MIDRIGHT;
       }
       // DERECHA
       else if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("der");
-        error += 1;
+        error += 2;
         line = LINE_RIGHT;
       }
       // CENTRO IZQUIERDA
       else if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
         //Serial.println("muy izq");
-        error -= 1;
+        error += -1;
         line = LINE_MIDLEFT;
       }
       // IZQUIERDA
       else if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
         //Serial.println("izq");
-        error -= 2;
+        error += -2;
         line = LINE_LEFT;
       }
       // CENTRO
@@ -145,14 +154,6 @@ void get_infrared(){
         error = 0;
         line = LINE_MID;
       }
-      
-        
-//      Serial.print("LEFT: ");
-//      Serial.print(left_ir);
-//      Serial.print(" MIDDLE: ");
-//      Serial.print(middle_ir);
-//      Serial.print(" RIGHT: ");
-//      Serial.println(right_ir);
       
       xTaskDelayUntil(&xLastWaskeTime, 10);
   }    
@@ -176,35 +177,36 @@ int get_distance(){
 }
 
 void is_obstacle(){
-  TickType_t xLastWaskeTime, aux;
+  TickType_t xLastWaskeTime;
   while(1){
     //Serial.println("CHECKING ULTRASOUND");
     xLastWaskeTime = xTaskGetTickCount();
-    int distance_sensor = get_distance();
+    float distance_sensor = get_distance();
     
     //Serial.println(distance_sensor);
-    if (distance_sensor < MAX_DIST_OBSTACLE){
+    if (distance_sensor < MAX_DIST_OBSTACLE && distance_sensor != 0){
+      //Serial.println(distance_sensor);    
       detected_obstacle = true;
-    } else {
-      detected_obstacle = false;  
     }
+    
     xTaskDelayUntil(&xLastWaskeTime, 10);
   }
 }
 
 void command_motors(){
-  TickType_t xLastWaskeTime, aux;
+  TickType_t xLastWaskeTime;
   while(1){
+
       //Serial.println("COMMANDING MOTORS");
       xLastWaskeTime = xTaskGetTickCount();
       // set high each time we use them 
       digitalWrite(PIN_Motor_AIN_1, HIGH);
       digitalWrite(PIN_Motor_BIN_1, HIGH);
       
-      P = error;
-      D = error - previous_error;      
+      p_error = error;
+      d_error = error - previous_error;      
 
-      PD = (Kp * P) + (Kd * D);
+      PD = (Kp * p_error) + (Kd * d_error);
 
       right_vel = STD_VELOCITY - PD;
       left_vel = STD_VELOCITY + PD;
@@ -222,7 +224,7 @@ void command_motors(){
         left_vel = MIN_VELOCITY;
       }
     
-      if (line == NO_LINE){
+      if (line == NO_LINE || obstacle_detected_sent){
         left_vel = 0;
         right_vel = 0;
       }
@@ -239,29 +241,26 @@ void command_motors(){
       // left
       analogWrite(PIN_Motor_PWMB, left_vel); 
 
+      previous_error = error;
+        
       xTaskDelayUntil(&xLastWaskeTime, 10);
   }   
 }
 
-/*void send_ping(){
-  TickType_t xLastWaskeTime, aux;
+void send_ping(){
+  TickType_t xLastWaskeTime;
    while(1){
       xLastWaskeTime = xTaskGetTickCount();
-      if (millis() - aux_time > 1000){
-        aux_time = millis();
-        count++;
-        ping = false;
-      }
-        
-      if (count == 4){
-        ping = true;
-        count = 0;
-      }
-      // repeat each second
-      ping = true;
+      current_ping_time = millis();
+      int time_elapsed = current_ping_time - prev_ping_time;
+      //Serial.println(time_elapsed);
+        if (time_elapsed > 4000){
+          Serial.print(PING);
+          prev_ping_time = current_ping_time;    
+        }
       xTaskDelayUntil(&xLastWaskeTime, 10);
     }
-}*/
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -284,17 +283,12 @@ void setup() {
   xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 3, NULL);
   xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
+  xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
   xTaskCreate(command_motors, "command_motors", 100, NULL, 4, NULL);
 
-  // state message sent each 4 seconds, time field should represent time
-  // since lap started . Should prioritize follow line behaviour to 
-  // sending PING messages 
-  //xTaskCreate(send_ping, "send_ping", 512, NULL, 2, NULL);
-
-  Serial.begin(9600);
-
+  Serial.begin(9600); // Arduino UNO has one serial only.
+  
 }
 
 void loop() {
 }
-

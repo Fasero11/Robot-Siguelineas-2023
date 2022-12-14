@@ -2,8 +2,8 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include <WiFi.h>
-#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
-#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "AstraZeneca_Chip#40876"                // your network SSID (name)
+#define WLAN_PASS "4312445a1b1b75a51e3b"        // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
@@ -22,7 +22,7 @@ Adafruit_MQTT_Client mqtt(&client, MQTT_SERVER, MQTT_SERVERPORT);
 // Setup a feed called 'test' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
 // last field is Qos = 2 
-Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/", MQTT_QOS_2);
+Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/");
 
 // Define specific pins for Serial2.
 #define RXD2 33
@@ -39,6 +39,7 @@ Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, "/SETR/2022/3/", MQTT
 
 String sendBuff;
 int start_lap_times = 0;
+long start_time;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
@@ -48,47 +49,47 @@ void send_json(){
     
     switch (sendBuff.toInt()){
       case START_LAP:
-        Serial.println("Sending START_LAP");
+        Serial.println("\nSending START_LAP");
         send_start_lap();
         break;
 
       case END_LAP:
-        Serial.println("Sending END_LAP");
+        Serial.println("\nSending END_LAP");
         send_end_lap();
         break;
 
       case OBSTACLE_DETECTED:
-        Serial.println("Sending OBSTACLE_DETECTED");
+        Serial.println("\nSending OBSTACLE_DETECTED");
         send_obstacle_detected();
         break;
 
       case LINE_LOST:
-        Serial.println("Sending LINE_LOST");
+        Serial.println("\nSending LINE_LOST");
         send_line_lost();
         break;
 
       case PING:
-        Serial.println("Sending PING");
+        Serial.println("\nSending PING");
         send_ping();
         break;
         
       case INIT_LINE_SEARCH:
-        Serial.println("Sending INIT_LINE_SEARCH");
+        Serial.println("\nSending INIT_LINE_SEARCH");
         send_init_line_search();
         break;
 
       case STOP_LINE_SEARCH:
-        Serial.println("Sending STOP_LINE_SEARCH");
+        Serial.println("\nSending STOP_LINE_SEARCH");
         send_stop_line_search();
         break;
 
       case LINE_FOUND:
-        Serial.println("Sending LINE_FOUND");
+        Serial.println("\nSending LINE_FOUND");
         send_line_found();
         break;
 
       default:
-        Serial.println("Error: Invalid value.");
+        Serial.println("\nError: Invalid value.");
         break;
     }
 }
@@ -99,7 +100,7 @@ void send_start_lap() {
 }
 
 void send_end_lap() {
-    long time_ms = millis();
+    long time_ms = millis() - start_time;
     char jsoninfo[100];
     sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\" %ld\"}", time_ms);
     topic.publish(jsoninfo);  
@@ -116,7 +117,7 @@ void send_line_lost() {
 }
 
 void send_ping() {
-    long time_ms = millis();
+    long time_ms = millis() - start_time;
     char jsoninfo[100];
     sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\" %ld\"}", time_ms);
     topic.publish(jsoninfo);        
@@ -213,12 +214,13 @@ void loop() {
     
     
     MQTT_connect();
-    
+
     if (start_lap_times == 0 && mqtt.connected()){
+      Serial.println("Sending START_LAP");
       send_start_lap();
+      start_time = millis();
       start_lap_times += 1;
     }
-    
     
     // READ MESSAGES FROM ARDUINO UNO //
     if (Serial2.available()) {
