@@ -3,11 +3,13 @@
 #define RXD2 33
 #define TXD2 4
 
-#define STD_VELOCITY 0
+#define STD_VELOCITY 45
 #define MAX_VELOCITY 255
 #define MIN_VELOCITY 0
 
-#define IR_THRESHOLD 100
+#define IR_R_THRESHOLD 65
+#define IR_M_THRESHOLD 55
+#define IR_L_THRESHOLD 150
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
@@ -63,7 +65,7 @@ int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, le
 
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
-const float Kp = 0;
+const float Kp = 2;
 const float Kd = 0;
 
 float p_error = 0, d_error = 0, PD = 0;
@@ -71,7 +73,7 @@ float error = 0, previous_error = 0;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//
 
-long current_ping_time, prev_ping_time;
+long current_ping_time, prev_ping_time = 0;
 
 void send_message(){
   TickType_t xLastWaskeTime;
@@ -109,16 +111,20 @@ void get_infrared(){
       left_ir = analogRead(PIN_ITR20001_LEFT);
       middle_ir = analogRead(PIN_ITR20001_MIDDLE);
       right_ir = analogRead(PIN_ITR20001_RIGHT);
-    /*
+
+      /*
       Serial.print("left_ir: ");
       Serial.print(left_ir);
       Serial.print(" | middle_ir: ");
       Serial.print(middle_ir);
       Serial.print(" | right_ir: ");
-      Serial.println(right_ir);*/
+      Serial.println(right_ir);
+      */
+
+      is_line = true;
 
       // TODOS ESTÁN FUERA 
-      if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+      if (left_ir < IR_L_THRESHOLD && middle_ir < IR_M_THRESHOLD && right_ir < IR_R_THRESHOLD){
         is_line = false;
         line = NO_LINE;
 
@@ -126,28 +132,28 @@ void get_infrared(){
       // AÑADIR EL CASO DE QUE SOLO TOQUE AL DEL CENTRO Y SERÁ LINE == 0 
 
       // CENTRO DERECHA
-      else if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+      else if (left_ir < IR_L_THRESHOLD && middle_ir >= IR_M_THRESHOLD && right_ir >= IR_R_THRESHOLD){
         //Serial.println("muy der");
         error += 1;
         line_last_seen = LINE_RIGHT;
         line = LINE_MIDRIGHT;
       }
       // DERECHA
-      else if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
+      else if (left_ir < IR_L_THRESHOLD && middle_ir < IR_M_THRESHOLD && right_ir >= IR_R_THRESHOLD){
         //Serial.println("der");
         error += 2;
         line_last_seen = LINE_RIGHT;
         line = LINE_RIGHT;
       }
       // CENTRO IZQUIERDA
-      else if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
+      else if (left_ir >= IR_L_THRESHOLD && middle_ir >= IR_M_THRESHOLD && right_ir < IR_R_THRESHOLD){
         //Serial.println("muy izq");
         error += -1;
         line_last_seen = LINE_LEFT;
         line = LINE_MIDLEFT;
       }
       // IZQUIERDA
-      else if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
+      else if (left_ir >= IR_L_THRESHOLD && middle_ir < IR_M_THRESHOLD && right_ir < IR_R_THRESHOLD){
         //Serial.println("izq");
         error += -2;
         line_last_seen = LINE_LEFT;
@@ -159,7 +165,7 @@ void get_infrared(){
         line = LINE_MID;
       }
       
-      xTaskDelayUntil(&xLastWaskeTime, 10);
+      xTaskDelayUntil(&xLastWaskeTime, 5);
   }    
 }
 
@@ -231,10 +237,10 @@ void command_motors(){
       if (line == NO_LINE && line_last_seen == LINE_LEFT){
         // TURN RIGHT
         left_vel = 0;
-        right_vel = 25;
+        right_vel = 45;//25;
       } else if (line == NO_LINE && line_last_seen == LINE_RIGHT){
         // TURN LEFT
-        left_vel = 25;
+        left_vel = 45;//25;
         right_vel = 0;
       }
 
@@ -242,13 +248,14 @@ void command_motors(){
         left_vel = 0;
         right_vel = 0;
       }
-
-      //Serial.print("Error: ");
-      //Serial.print(error);
-      //Serial.print(" | Left: ");
-      //Serial.print(left_vel);
-      //Serial.print(" | Right: ");
-     // Serial.println(right_vel);
+      /*
+      Serial.print("Error: ");
+      Serial.print(error);
+      Serial.print(" | Left: ");
+      Serial.print(left_vel);
+      Serial.print(" | Right: ");
+      Serial.println(right_vel);
+      */
 
       // right 
       analogWrite(PIN_Motor_PWMA, right_vel);
@@ -257,7 +264,7 @@ void command_motors(){
 
       previous_error = error;
         
-      xTaskDelayUntil(&xLastWaskeTime, 10);
+      xTaskDelayUntil(&xLastWaskeTime, 5);
   }   
 }
 
@@ -292,6 +299,19 @@ void setup() {
 
   digitalWrite(PIN_Motor_STBY, HIGH); // Enables motor control
 
+  Serial.begin(9600); // Arduino UNO has one serial only.
+
+  /*
+  while(1){
+    if (Serial.available()){
+      Serial.println(Serial.read());
+      break;
+    }
+  }
+  */
+
+  Serial.println("OUT");
+
   // communicate arduino with ESP to start lap
 
   xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 3, NULL);
@@ -300,8 +320,6 @@ void setup() {
   xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
   xTaskCreate(command_motors, "command_motors", 100, NULL, 4, NULL);
 
-  Serial.begin(9600); // Arduino UNO has one serial only.
-  
 }
 
 void loop() {
