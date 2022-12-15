@@ -3,13 +3,13 @@
 #define RXD2 33
 #define TXD2 4
 
-#define STD_VELOCITY 45
+#define STD_VELOCITY 55
 #define MAX_VELOCITY 255
 #define MIN_VELOCITY 0
 
-#define IR_R_THRESHOLD 65
-#define IR_M_THRESHOLD 55
-#define IR_L_THRESHOLD 150
+#define IR_R_THRESHOLD 125
+#define IR_M_THRESHOLD 100
+#define IR_L_THRESHOLD 225<
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
@@ -127,6 +127,8 @@ void get_infrared(){
       if (left_ir < IR_L_THRESHOLD && middle_ir < IR_M_THRESHOLD && right_ir < IR_R_THRESHOLD){
         is_line = false;
         line = NO_LINE;
+        error = 0;
+        previous_error = 0;
 
       }
       // AÑADIR EL CASO DE QUE SOLO TOQUE AL DEL CENTRO Y SERÁ LINE == 0 
@@ -135,7 +137,6 @@ void get_infrared(){
       else if (left_ir < IR_L_THRESHOLD && middle_ir >= IR_M_THRESHOLD && right_ir >= IR_R_THRESHOLD){
         //Serial.println("muy der");
         error += 1;
-        line_last_seen = LINE_RIGHT;
         line = LINE_MIDRIGHT;
       }
       // DERECHA
@@ -149,7 +150,6 @@ void get_infrared(){
       else if (left_ir >= IR_L_THRESHOLD && middle_ir >= IR_M_THRESHOLD && right_ir < IR_R_THRESHOLD){
         //Serial.println("muy izq");
         error += -1;
-        line_last_seen = LINE_LEFT;
         line = LINE_MIDLEFT;
       }
       // IZQUIERDA
@@ -162,6 +162,8 @@ void get_infrared(){
       // CENTRO
       else {
         error = 0;
+        previous_error = 0;
+        line_last_seen = LINE_MID;
         line = LINE_MID;
       }
       
@@ -237,10 +239,10 @@ void command_motors(){
       if (line == NO_LINE && line_last_seen == LINE_LEFT){
         // TURN RIGHT
         left_vel = 0;
-        right_vel = 45;//25;
+        right_vel = 35;//25;
       } else if (line == NO_LINE && line_last_seen == LINE_RIGHT){
         // TURN LEFT
-        left_vel = 45;//25;
+        left_vel = 35;//25;
         right_vel = 0;
       }
 
