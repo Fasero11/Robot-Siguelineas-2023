@@ -59,7 +59,7 @@ bool is_line = true;
 bool ping = false;
 long aux_time = 0;
 
-int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel, line_lost_sent, obstacle_detected_sent;
+int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel, line_lost_sent, obstacle_detected_sent, line_last_seen;
 
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
@@ -129,24 +129,28 @@ void get_infrared(){
       else if (left_ir < IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("muy der");
         error += 1;
+        line_last_seen = LINE_RIGHT;
         line = LINE_MIDRIGHT;
       }
       // DERECHA
       else if (left_ir < IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir >= IR_THRESHOLD){
         //Serial.println("der");
         error += 2;
+        line_last_seen = LINE_RIGHT;
         line = LINE_RIGHT;
       }
       // CENTRO IZQUIERDA
       else if (left_ir >= IR_THRESHOLD && middle_ir >= IR_THRESHOLD && right_ir < IR_THRESHOLD){
         //Serial.println("muy izq");
         error += -1;
+        line_last_seen = LINE_LEFT;
         line = LINE_MIDLEFT;
       }
       // IZQUIERDA
       else if (left_ir >= IR_THRESHOLD && middle_ir < IR_THRESHOLD && right_ir < IR_THRESHOLD){
         //Serial.println("izq");
         error += -2;
+        line_last_seen = LINE_LEFT;
         line = LINE_LEFT;
       }
       // CENTRO
@@ -223,8 +227,18 @@ void command_motors(){
       if (left_vel < MIN_VELOCITY){
         left_vel = MIN_VELOCITY;
       }
-    
-      if (line == NO_LINE || obstacle_detected_sent){
+
+      if (line == NO_LINE && line_last_seen == LINE_LEFT){
+        // TURN RIGHT
+        left_vel = 0;
+        right_vel = 25;
+      } else if (line == NO_LINE && line_last_seen == LINE_RIGHT){
+        // TURN LEFT
+        left_vel = 25;
+        right_vel = 0;
+      }
+
+      if (obstacle_detected_sent){
         left_vel = 0;
         right_vel = 0;
       }
@@ -254,7 +268,7 @@ void send_ping(){
       current_ping_time = millis();
       int time_elapsed = current_ping_time - prev_ping_time;
       //Serial.println(time_elapsed);
-        if (time_elapsed > 4000){
+        if (time_elapsed > 4000 && !obstacle_detected_sent){
           Serial.print(PING);
           prev_ping_time = current_ping_time;    
         }

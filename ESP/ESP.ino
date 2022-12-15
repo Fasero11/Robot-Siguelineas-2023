@@ -112,7 +112,7 @@ void send_obstacle_detected() {
 }
 
 void send_line_lost() {
-    char jsoninfo[] = "{\"team_name\":\"Robot Maniac\",\"id\":\"3\",\"action\":\"LINE_LOST\"}";
+    char jsoninfo[] = "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"LINE_LOST\"}";
     topic.publish(jsoninfo);    
 }
 
