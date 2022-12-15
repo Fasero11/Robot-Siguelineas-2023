@@ -2,8 +2,8 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include <WiFi.h>
-#define WLAN_SSID "AstraZeneca_Chip#40876"                // your network SSID (name)
-#define WLAN_PASS "4312445a1b1b75a51e3b"        // your network password (use for WPA, or use as key for WEP)
+#define WLAN_SSID "sensoresurjc"                // your network SSID (name)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"        // your network password (use for WPA, or use as key for WEP)
 int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 
 #define MQTT_SERVER "193.147.53.2"
@@ -201,6 +201,15 @@ void setup() {
 
   initWiFi();
 
+  while(!mqtt.connected()){
+    MQTT_connect();
+  }
+
+  Serial.println("Sending START_LAP");
+  send_start_lap();
+  start_time = millis();
+
+
 }
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
@@ -213,15 +222,9 @@ void loop() {
   // function definition further below.
     
     
+    // stays for keep alive
     MQTT_connect();
 
-    if (start_lap_times == 0 && mqtt.connected()){
-      Serial.println("Sending START_LAP");
-      send_start_lap();
-      start_time = millis();
-      start_lap_times += 1;
-    }
-    
     // READ MESSAGES FROM ARDUINO UNO //
     if (Serial2.available()) {
     
