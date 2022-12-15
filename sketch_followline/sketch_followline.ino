@@ -9,7 +9,7 @@
 
 #define IR_R_THRESHOLD 125
 #define IR_M_THRESHOLD 100
-#define IR_L_THRESHOLD 225<
+#define IR_L_THRESHOLD 225
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
