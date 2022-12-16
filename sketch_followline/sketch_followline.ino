@@ -1,4 +1,9 @@
 #include <Arduino_FreeRTOS.h>
+#include "FastLED.h"
+
+#define PIN_RBGLED 4
+#define NUM_LEDS 1
+CRGB leds[NUM_LEDS];
 
 #define RXD2 33
 #define TXD2 4
@@ -39,8 +44,10 @@
 // PIN_Motor_PWMB: Analog output [0-255]. It provides speed.
 #define PIN_Motor_PWMB 6
 
+#define BUILTIN_LED 13
+
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 7.0
+#define MAX_DIST_OBSTACLE 12.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -114,14 +121,14 @@ void get_infrared(){
       middle_ir = analogRead(PIN_ITR20001_MIDDLE);
       right_ir = analogRead(PIN_ITR20001_RIGHT);
 
-      
-      /*Serial.print("left_ir: ");
+      /*
+      Serial.print("left_ir: ");
       Serial.print(left_ir);
       Serial.print(" | middle_ir: ");
       Serial.print(middle_ir);
       Serial.print(" | right_ir: ");
-      Serial.println(right_ir);*/
-      
+      Serial.println(right_ir);
+      */
 
       is_line = true;
 
@@ -203,7 +210,7 @@ void is_obstacle(){
       detected_obstacle = true;
     }
     
-    xTaskDelayUntil(&xLastWaskeTime, 5);
+    xTaskDelayUntil(&xLastWaskeTime, 1);
   }
 }
 
@@ -252,6 +259,7 @@ void command_motors(){
         left_vel = 0;
         right_vel = 0;
       }
+
       /*
       Serial.print("Error: ");
       Serial.print(error);
@@ -287,6 +295,11 @@ void send_ping(){
     }
 }
 
+uint32_t Color(uint8_t r, uint8_t g, uint8_t b)
+{
+  return (((uint32_t)r << 16) | ((uint32_t)g << 8) | b);
+}
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -301,25 +314,27 @@ void setup() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
+  FastLED.addLeds<NEOPIXEL, PIN_RBGLED>(leds, NUM_LEDS);
+  FastLED.setBrightness(0);
+  FastLED.showColor(Color(0, 0, 0));
+
+  FastLED.setBrightness(100);
+
   digitalWrite(PIN_Motor_STBY, HIGH); // Enables motor control
 
   Serial.begin(9600); // Arduino UNO has one serial only.
 
-  /*
   while(1){
     if (Serial.available()){
       Serial.println(Serial.read());
       break;
     }
   }
-  */
-
-  Serial.println("OUT");
+  FastLED.showColor(Color(0, 255, 0));
 
   // communicate arduino with ESP to start lap
 
-  
-  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 2, NULL);
+  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 4, NULL);
   xTaskCreate(get_infrared, "get_infrared", 100, NULL, 3, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
   xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
