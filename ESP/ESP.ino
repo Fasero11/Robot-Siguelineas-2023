@@ -208,6 +208,7 @@ void setup() {
   Serial.println("Sending START_LAP");
   send_start_lap();
   start_time = millis();
+  Serial2.write(0);
 
 
 }
