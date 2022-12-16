@@ -3,13 +3,15 @@
 #define RXD2 33
 #define TXD2 4
 
-#define STD_VELOCITY 55
+#define STD_VELOCITY 120
 #define MAX_VELOCITY 255
 #define MIN_VELOCITY 0
+#define LOST_LINE_VEL 150
+#define LOST_LINE_SECOND_VEL 0
 
-#define IR_R_THRESHOLD 125
-#define IR_M_THRESHOLD 100
-#define IR_L_THRESHOLD 225
+#define IR_R_THRESHOLD 450
+#define IR_M_THRESHOLD 150
+#define IR_L_THRESHOLD 650
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
@@ -66,7 +68,7 @@ int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, le
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
 const float Kp = 2;
-const float Kd = 0;
+const float Kd = 15;
 
 float p_error = 0, d_error = 0, PD = 0;
 float error = 0, previous_error = 0;
@@ -100,7 +102,7 @@ void send_message(){
         obstacle_detected_sent = 1;
       }
       
-      xTaskDelayUntil(&xLastWaskeTime, 20);
+      xTaskDelayUntil(&xLastWaskeTime, 10);
     }    
 }
 
@@ -112,14 +114,14 @@ void get_infrared(){
       middle_ir = analogRead(PIN_ITR20001_MIDDLE);
       right_ir = analogRead(PIN_ITR20001_RIGHT);
 
-      /*
-      Serial.print("left_ir: ");
+      
+      /*Serial.print("left_ir: ");
       Serial.print(left_ir);
       Serial.print(" | middle_ir: ");
       Serial.print(middle_ir);
       Serial.print(" | right_ir: ");
-      Serial.println(right_ir);
-      */
+      Serial.println(right_ir);*/
+      
 
       is_line = true;
 
@@ -167,7 +169,7 @@ void get_infrared(){
         line = LINE_MID;
       }
       
-      xTaskDelayUntil(&xLastWaskeTime, 5);
+      xTaskDelayUntil(&xLastWaskeTime, 1);
   }    
 }
 
@@ -201,7 +203,7 @@ void is_obstacle(){
       detected_obstacle = true;
     }
     
-    xTaskDelayUntil(&xLastWaskeTime, 10);
+    xTaskDelayUntil(&xLastWaskeTime, 5);
   }
 }
 
@@ -238,12 +240,12 @@ void command_motors(){
 
       if (line == NO_LINE && line_last_seen == LINE_LEFT){
         // TURN RIGHT
-        left_vel = 0;
-        right_vel = 35;//25;
+        left_vel = LOST_LINE_SECOND_VEL;
+        right_vel = LOST_LINE_VEL;//25;
       } else if (line == NO_LINE && line_last_seen == LINE_RIGHT){
         // TURN LEFT
-        left_vel = 35;//25;
-        right_vel = 0;
+        left_vel = LOST_LINE_VEL;//25;
+        right_vel = LOST_LINE_SECOND_VEL;
       }
 
       if (obstacle_detected_sent){
@@ -266,7 +268,7 @@ void command_motors(){
 
       previous_error = error;
         
-      xTaskDelayUntil(&xLastWaskeTime, 5);
+      xTaskDelayUntil(&xLastWaskeTime, 1);
   }   
 }
 
@@ -281,7 +283,7 @@ void send_ping(){
           Serial.print(PING);
           prev_ping_time = current_ping_time;    
         }
-      xTaskDelayUntil(&xLastWaskeTime, 10);
+      xTaskDelayUntil(&xLastWaskeTime, 5);
     }
 }
 
@@ -316,11 +318,12 @@ void setup() {
 
   // communicate arduino with ESP to start lap
 
-  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 3, NULL);
-  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
+  
+  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 2, NULL);
+  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 3, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
   xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
-  xTaskCreate(command_motors, "command_motors", 100, NULL, 4, NULL);
+  xTaskCreate(command_motors, "command_motors", 100, NULL, 3, NULL);
 
 }
 
