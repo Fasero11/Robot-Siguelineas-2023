@@ -334,11 +334,11 @@ void setup() {
 
   // communicate arduino with ESP to start lap
 
-  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 4, NULL);
-  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 3, NULL);
+  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 2, NULL);
+  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
   xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
-  xTaskCreate(command_motors, "command_motors", 100, NULL, 3, NULL);
+  xTaskCreate(command_motors, "command_motors", 100, NULL, 1, NULL);
 
 }
 
