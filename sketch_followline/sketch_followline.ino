@@ -11,12 +11,12 @@ CRGB leds[NUM_LEDS];
 #define STD_VELOCITY 120
 #define MAX_VELOCITY 255
 #define MIN_VELOCITY 0
-#define LOST_LINE_VEL 150
+#define LOST_LINE_VEL 120
 #define LOST_LINE_SECOND_VEL 0
 
-#define IR_R_THRESHOLD 450
-#define IR_M_THRESHOLD 150
-#define IR_L_THRESHOLD 650
+#define IR_R_THRESHOLD 650
+#define IR_M_THRESHOLD 450
+#define IR_L_THRESHOLD 750
 
 // ultrasonic sensor 
 #define TRIG_PIN 13  
@@ -47,7 +47,7 @@ CRGB leds[NUM_LEDS];
 #define BUILTIN_LED 13
 
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 12.0
+#define MAX_DIST_OBSTACLE 8.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -74,8 +74,8 @@ int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, le
 
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
-const float Kp = 2;
-const float Kd = 15;
+const float Kp = 0.1;
+const float Kd = 0;
 
 float p_error = 0, d_error = 0, PD = 0;
 float error = 0, previous_error = 0;
@@ -121,14 +121,14 @@ void get_infrared(){
       middle_ir = analogRead(PIN_ITR20001_MIDDLE);
       right_ir = analogRead(PIN_ITR20001_RIGHT);
 
-      /*
-      Serial.print("left_ir: ");
+      
+      /*Serial.print("left_ir: ");
       Serial.print(left_ir);
       Serial.print(" | middle_ir: ");
       Serial.print(middle_ir);
       Serial.print(" | right_ir: ");
-      Serial.println(right_ir);
-      */
+      Serial.println(right_ir);*/
+      
 
       is_line = true;
 
@@ -301,9 +301,22 @@ uint32_t Color(uint8_t r, uint8_t g, uint8_t b)
 }
 
 void setup() {
-  // put your setup code here, to run once:
 
-  Serial.println("START");
+  FastLED.addLeds<NEOPIXEL, PIN_RBGLED>(leds, NUM_LEDS);
+  FastLED.setBrightness(0);
+  FastLED.showColor(Color(0, 0, 0));
+
+  FastLED.setBrightness(100);
+  // put your setup code here, to run once:
+  Serial.begin(9600); // Arduino UNO has one serial only.
+  //Serial.println("START");
+  while(1){
+    if (Serial.available()){
+      Serial.println(Serial.read());
+      break;
+    }
+  }
+  FastLED.showColor(Color(0, 255, 0));
 
   pinMode(PIN_Motor_STBY, OUTPUT);
   pinMode(PIN_Motor_AIN_1, OUTPUT);
@@ -314,26 +327,21 @@ void setup() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
-  FastLED.addLeds<NEOPIXEL, PIN_RBGLED>(leds, NUM_LEDS);
-  FastLED.setBrightness(0);
-  FastLED.showColor(Color(0, 0, 0));
-
-  FastLED.setBrightness(100);
-
   digitalWrite(PIN_Motor_STBY, HIGH); // Enables motor control
 
-  Serial.begin(9600); // Arduino UNO has one serial only.
+  //Serial.begin(9600); // Arduino UNO has one serial only.
 
-  while(1){
+  /*while(1){
     if (Serial.available()){
       Serial.println(Serial.read());
       break;
     }
   }
-  FastLED.showColor(Color(0, 255, 0));
+  FastLED.showColor(Color(0, 255, 0));*/
 
   // communicate arduino with ESP to start lap
 
+  
   xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 2, NULL);
   xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
