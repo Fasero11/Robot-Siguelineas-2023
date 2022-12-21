@@ -10,6 +10,9 @@ int status = WL_IDLE_STATUS;                    // the WiFi radio's status
 #define MQTT_SERVERPORT 21883
 #define MQTT_QOS_2 2
 
+long current_ping_time, prev_ping_time = 0;
+bool detected_obstacle = false;
+
 // mandar c para simular que está conectado
 //const byte data[] = {'C'};
 //const size_t dataLength = sizeof(data);
@@ -59,6 +62,7 @@ void send_json(){
         break;
 
       case OBSTACLE_DETECTED:
+        detected_obstacle = true;
         Serial.println("\nSending OBSTACLE_DETECTED");
         send_obstacle_detected();
         break;
@@ -102,7 +106,7 @@ void send_start_lap() {
 void send_end_lap() {
     long time_ms = millis() - start_time;
     char jsoninfo[100];
-    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\":\" %ld\"}", time_ms);
+    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"END_LAP\",\"time\": %ld}", time_ms);
     topic.publish(jsoninfo);  
 }
 
@@ -119,7 +123,7 @@ void send_line_lost() {
 void send_ping() {
     long time_ms = millis() - start_time;
     char jsoninfo[100];
-    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\":\" %ld\"}", time_ms);
+    sprintf(jsoninfo, "{\"team_name\":\"Robot-Maniac\",\"id\":\"3\",\"action\":\"PING\",\"time\": %ld}", time_ms);
     topic.publish(jsoninfo);        
 }
 
@@ -240,6 +244,13 @@ void loop() {
         send_json();
 
         sendBuff = "";
+    }
+    
+    current_ping_time = millis();
+    int time_elapsed = current_ping_time - prev_ping_time;
+    if (!detected_obstacle && time_elapsed > 4000){
+      send_ping();
+      prev_ping_time = current_ping_time;    
     }
  }
 

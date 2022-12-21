@@ -47,7 +47,7 @@ CRGB leds[NUM_LEDS];
 #define BUILTIN_LED 13
 
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 10.0
+#define MAX_DIST_OBSTACLE 12.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -67,7 +67,7 @@ CRGB leds[NUM_LEDS];
 
 bool detected_obstacle = false;
 bool is_line = true;
-bool ping = false;
+//bool ping = false;
 long aux_time = 0;
 
 int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel, line_lost_sent, obstacle_detected_sent, line_last_seen;
@@ -82,7 +82,7 @@ float error = 0, previous_error = 0;
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//
 
-long current_ping_time, prev_ping_time = 0;
+//long current_ping_time, prev_ping_time = 0;
 
 void send_message(){
   TickType_t xLastWaskeTime;
@@ -280,6 +280,7 @@ void command_motors(){
   }   
 }
 
+/*
 void send_ping(){
   TickType_t xLastWaskeTime;
    while(1){
@@ -294,6 +295,7 @@ void send_ping(){
       xTaskDelayUntil(&xLastWaskeTime, 5);
     }
 }
+*/
 
 uint32_t Color(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -345,7 +347,7 @@ void setup() {
   xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 1, NULL);
   xTaskCreate(get_infrared, "get_infrared", 100, NULL, 2, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
-  xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
+  //xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
   xTaskCreate(command_motors, "command_motors", 100, NULL, 2, NULL);
 
 }
