@@ -74,7 +74,26 @@ Kp = 1
 
 Kd = 25
 
+Time obtained: 8.6
 
+
+VERSION 3 WORKING: 
+
+STD_VEL = 175
+
+LOST_LINE = 175
+
+IR_R = 650
+
+IR_M = 450
+
+IR_L = 750
+
+Kp = 1.5
+
+Kd = 20
+
+Time obtained: 8.1
 
 
 ## ESTRUCTURA DE LA PRÁCTICA
