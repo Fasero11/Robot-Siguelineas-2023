@@ -58,6 +58,25 @@ Tras desgranar del 3) y hacer testing, estos son los valores y conexiones de cad
 
 IMPORTANTE! Cada vez que se mande una velocidad el motor hay que mandar high
 
+
+VERSION 2 WORKING: 
+
+STD_VEL = 120
+
+LOST_LINE = 120
+
+IR_R = 650
+
+IR_M = 450
+
+IR_L = 750
+
+Kp = 0.1
+
+Kd = 0
+
+Time obtained: 10.1
+
 VERSION 2 WORKING: 
 
 STD_VEL = 175
