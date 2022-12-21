@@ -47,7 +47,7 @@ CRGB leds[NUM_LEDS];
 #define BUILTIN_LED 13
 
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 8.0
+#define MAX_DIST_OBSTACLE 10.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -342,11 +342,11 @@ void setup() {
   // communicate arduino with ESP to start lap
 
   
-  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 2, NULL);
-  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 1, NULL);
+  xTaskCreate(is_obstacle, "is_obstacle", 100, NULL, 1, NULL);
+  xTaskCreate(get_infrared, "get_infrared", 100, NULL, 2, NULL);
   xTaskCreate(send_message, "send_message", 100, NULL, 0, NULL);
   xTaskCreate(send_ping, "send_ping", 100, NULL, 0, NULL);
-  xTaskCreate(command_motors, "command_motors", 100, NULL, 1, NULL);
+  xTaskCreate(command_motors, "command_motors", 100, NULL, 2, NULL);
 
 }
 
