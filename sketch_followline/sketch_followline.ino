@@ -47,7 +47,7 @@ CRGB leds[NUM_LEDS];
 #define BUILTIN_LED 13
 
 //ultrasonic sensor 
-#define MAX_DIST_OBSTACLE 12.0
+#define MAX_DIST_OBSTACLE 10.0
 
 #define START_LAP 1
 #define END_LAP 2
@@ -70,12 +70,13 @@ bool is_line = true;
 //bool ping = false;
 long aux_time = 0;
 
-int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel, left_vel, line_lost_sent, obstacle_detected_sent, line_last_seen;
+int left_ir, middle_ir, right_ir, message, prev_time, line, count, right_vel,
+ left_vel, line_lost_sent, obstacle_detected_sent, line_last_seen;
 
 //.//.//.//.//.//. PID //.//.//.//.//.//.
 
 const float Kp = 0.1;
-const float Kd = 0;
+const float Kd = 20;
 
 float p_error = 0, d_error = 0, PD = 0;
 float error = 0, previous_error = 0;
@@ -101,12 +102,6 @@ void send_message(){
         line_lost_sent = 0;
         Serial.print(LINE_FOUND);
         Serial.print(STOP_LINE_SEARCH);
-      }
-      
-      if(detected_obstacle && !obstacle_detected_sent){    
-        Serial.print(OBSTACLE_DETECTED);
-        Serial.print(END_LAP);
-        obstacle_detected_sent = 1;
       }
       
       xTaskDelayUntil(&xLastWaskeTime, 10);
@@ -208,6 +203,11 @@ void is_obstacle(){
     if (distance_sensor < MAX_DIST_OBSTACLE && distance_sensor != 0){
       //Serial.println(distance_sensor);    
       detected_obstacle = true;
+      if(detected_obstacle && !obstacle_detected_sent){    
+        Serial.print(OBSTACLE_DETECTED);
+        Serial.print(END_LAP);
+        obstacle_detected_sent = 1;
+      }
     }
     
     xTaskDelayUntil(&xLastWaskeTime, 1);
@@ -255,7 +255,7 @@ void command_motors(){
         right_vel = LOST_LINE_SECOND_VEL;
       }
 
-      if (obstacle_detected_sent){
+      if (detected_obstacle){
         left_vel = 0;
         right_vel = 0;
       }
