@@ -73,7 +73,8 @@ IR_L = 750
 
 Kp = 0.1
 
-Kd = 0
+Kd = 20
+
 
 Time obtained: 10.1
 
