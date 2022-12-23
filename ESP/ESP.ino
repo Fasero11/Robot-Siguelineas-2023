@@ -3,7 +3,7 @@
 #include <WiFi.h>
 
 #define WLAN_SSID "sensoresurjc"                // your network SSID (name)
-#define WLAN_PASS "Goox0sie_WZCGGh25680000"        // your network password (use for WPA, or use as key for WEP)
+#define WLAN_PASS "Goox0sie_WZCGGh25680000"     // your network password (use for WPA, or use as key for WEP)
 #define MQTT_SERVER "193.147.53.2"
 #define MQTT_SERVERPORT 21883
 #define MQTT_QOS_2 2
@@ -43,6 +43,7 @@ long start_time;
 #define ONESEC 1000
 
 #define COM_ESP2ARD 0
+
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//. JSON MESSAGES //.//.//.//.//.//.//.
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
@@ -188,22 +189,12 @@ void initWiFi() {
   printWifiData();
 }
 
-
-//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
-//.//.//.//.// SHOW NETWORK INFORMATION //.//.//.//.//
-//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
-
 void printWifiData() {
   // print your board's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 }
-
-
-//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
-//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
-
 
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 //.//.//.//.//.//.//.// SETUP //.//.//.//.//.//.//.//.
@@ -233,12 +224,9 @@ void setup() {
 //.//.//.//.//.//.//.// LOOP //.//.//.//.//.//.//.//./
 //.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.//.
 
-
-// Ensure the connection to the MQTT server is alive (this will make the first
-// connection and automatically reconnect when disconnected).
 void loop() {
-
-    // stays for keep alive
+    // Ensure the connection to the MQTT server is alive 
+    // (this will automatically reconnect when disconnected).
     MQTT_connect();
 
     // READ MESSAGES FROM ARDUINO UNO //
