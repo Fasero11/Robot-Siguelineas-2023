@@ -185,6 +185,8 @@ void is_obstacle(){
                 Serial.print(OBSTACLE_DETECTED);
                 Serial.print(END_LAP);
                 obstacle_detected_sent = 1;
+                left_vel = 0;
+                right_vel = 0;
             }
         }
 
